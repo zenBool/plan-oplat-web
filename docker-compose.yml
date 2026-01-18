@@ -12,24 +12,7 @@ services:
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     networks:
-      - fastapi-miniapp
-
-  #  pg:
-#    image: postgres
-#    environment:
-#      POSTGRES_DB: shop
-#      POSTGRES_USER: user
-#      POSTGRES_PASSWORD: password
-#      PGDATA: /var/lib/postgresql/data
-#    ports:
-#      - "5432:5432"
-#    volumes:
-#      - pgdata:/var/lib/postgresql/data
-#    healthcheck:
-#      test: [ "CMD-SHELL", "pg_isready" ]
-#      interval: 5s
-#      timeout: 3s
-#      retries: 3
+      - plan-oplat
 
   maildev:
     image: maildev/maildev
@@ -46,7 +29,7 @@ services:
       options:
         max-size: "1m"
     networks:
-      - fastapi-miniapp
+      - plan-oplat
 
   nats:
     image: nats:2.11-alpine
@@ -54,7 +37,7 @@ services:
     ports:
       - "4222:4222"
     networks:
-      - fastapi-miniapp
+      - plan-oplat
 
   adminer:
     image: adminer
@@ -62,23 +45,12 @@ services:
     ports:
       - "8888:8080"
     networks:
-      - fastapi-miniapp
-#
-#  pgadmin:
-#    image: dpage/pgadmin4
-#    environment:
-#      PGADMIN_DEFAULT_EMAIL: admin@admin.org
-#      PGADMIN_DEFAULT_PASSWORD: admin
-#      PGADMIN_CONFIG_SERVER_MODE: 'False'
-#    ports:
-#      - "5050:80"
-
+      - plan-oplat
 
 volumes:
-#  pgdata:
   rabbitmq-data:
 
 networks:
-  fastapi-miniapp:
+  plan-oplat:
     driver: bridge
-    name: fastapi-miniapp
+    name: plan-oplat
