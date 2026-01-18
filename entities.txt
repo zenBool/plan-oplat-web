@@ -1,0 +1,36 @@
+ENTITIES
+****************
+User
+Organization
+Product
+Order
+
+^^^^^^^^^^^^^^^^
+
+
+TABLES
+****************
+
+User Inheritances
+---------------
+Manager
+SupplierManager
+Accountant
+Administrator
+Operator
+
+===============
+Organization Inheritances
+---------------
+FOP
+Bank
+Production
+Supplier
+
+===============
+Product
+---------------
+
+===============
+Order
+---------------

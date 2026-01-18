@@ -1,6 +1,16 @@
+============================================
 |`````````
-| User
+| User (ABC)
 |_________
+id
+first_name
+last_name
+username
+phone
+telegram_id
+telegram_username
+is_active
+created_at
 
 
 |`````````
@@ -24,20 +34,50 @@
 
 
 |`````````
-| Administrator (User)
+| Operator (User)
+|_________
+
+
+============================================
+|`````````
+| Organization (ABC)
+|_________
+id
+fullname
+
+
+|`````````
+| FOP (Organization)
+|_________
+accountant
+[bank_balance]
+balance_total (вычисляемое поле)
+[production]
+
+
+|`````````
+| Bank (Organization)
 |_________
 
 
 |`````````
-| User
+| Production (Organization)
 |_________
 
 
 |`````````
-| User
+| Supplier (Organization)
 |_________
 
 
+============================================
 |`````````
-| User
+| Product
+|_________
+fullname
+
+
+============================================
+|`````````
+| Order
 |_________
