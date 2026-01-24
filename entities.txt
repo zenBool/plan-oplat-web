@@ -14,10 +14,13 @@ TABLES
 User Inheritances
 ---------------
 Manager
-SupplierManager
 Accountant
 Administrator
 Operator
+
+===============
+SupplierManager
+---------------
 
 ===============
 Organization Inheritances

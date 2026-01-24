@@ -24,11 +24,6 @@ created_at
 
 
 |`````````
-| Supplier (User)
-|_________
-
-
-|`````````
 | Accountant (User)
 |_________
 
@@ -41,6 +36,22 @@ created_at
 |`````````
 | Operator (User)
 |_________
+
+
+============================================
+|`````````
+| SupplierManager
+|_________
+d
+first_name
+last_name
+username
+phone
+telegram_id
+telegram_username
+is_active
+created_at
+
 
 
 ============================================
