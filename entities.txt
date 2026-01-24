@@ -24,7 +24,7 @@ Organization Inheritances
 ---------------
 FOP
 Bank
-Production
+Receiver
 Supplier
 
 ===============
