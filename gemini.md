@@ -142,7 +142,7 @@
 =================
 
 
-Замечания / уточнения по модулям. Если я не упоминаю какие то пункты или подпункты, то это значит, что я полностью с тобой согласен.
+Замечания и/или уточнения по модулям. Если я не упоминаю какие то пункты или подпункты, то это значит, что я полностью с тобой согласен.
 
 
 А. Модуль "Корпоративная Структура и Контрагенты"
@@ -192,3 +192,117 @@ Balance (Баланс): Вести учет нужно. У каждого ФОП
 7. Система через Бота пересылает сумму к оплате Accountant-у, который отвечает за ФОП 'Иванов'.
 8. Accountant оплачивает, жмет в Системе "Оплачено", прикрепляет скрин.
 9. Менеджер получает уведомление "Оплачено. Сумма ххх.хх из уууу.уу", ждет поставку.
+
+===========================================
+===========================================
+===========================================
+# Technical Specification & Agent Prompt: Buyer-Side Order Management System
+
+**Role:** Senior Backend Architect & Lead Developer.
+**Objective:** Design and implement a Buyer-side Order Management System (OMS) with complex financial routing and Telegram integration.
+**Tech Stack:** Python (FastAPI or Django), PostgreSQL, SQLAlchemy (or Django ORM), Docker, Telegram Bot API (aiogram).
+
+---
+
+### 1. Project Overview
+Необходимо разработать бэкенд системы управления закупками для корпорации. Система управляет заказами от момента создания до закрытия, с фокусом на сложную маршрутизацию платежей через сеть ФОПов (FOP - индивидуальные предприниматели).
+
+### 2. Core Entities & Database Schema
+Спроектируй схему БД (ERD) и модели данных, учитывая следующие сущности:
+
+#### A. Actors & Roles (RBAC)
+*   **User:** Базовая модель.
+*   **Roles:**
+    1.  **Administrator:** Полный доступ.
+    2.  **Manager:** Создает заказы, работает с поставщиками. Не видит балансов.
+    3.  **SupplierManager:** Внешний агент (представитель поставщика). Доступ только через External Telegram Bot.
+    4.  **HeadAccountant:** Финансовый диспетчер. Видит все балансы, распределяет суммы заказов по плательщикам.
+    5.  **Accountant:** Исполнитель. Видит только назначенные ему задачи на оплату.
+    6.  **Operator:** Помощник менеджера.
+
+#### B. Corporate Structure (The Matrix)
+*   **Receiver (Производство):** Получатель товара (2 завода).
+*   **Supplier (Поставщик):** Продавец товара.
+*   **FOP (Плательщик):** Юрлицо, через которое идут деньги (~50 шт.).
+    *   *Attributes:* Name, Linked Accountant (User).
+*   **BankAccounts:** Счета ФОПов.
+*   **BalanceSnapshot:** История остатков (`fop_id`, `date`, `amount`). Актуальный баланс берется из последней записи.
+
+#### C. Relations (Critical Logic)
+Реализовать связи "Многие-ко-Многим" для валидации платежей:
+1.  `FOP_Supplier_Link`: Какой ФОП имеет право платить какому Поставщику.
+2.  `FOP_Receiver_Link`: Какой ФОП обслуживает какое Производство.
+*При выборе плательщика система должна искать пересечение: FOP должен быть связан И с Supplier из заказа, И с Receiver из заказа.*
+
+#### D. Order Management
+*   **Order:**
+    *   Fields: `manager`, `receiver`, `supplier`, `products` (JSON or related table), `total_sum`, `currency` (UAH).
+    *   **Order Status (Enum):** `Draft`, `Awaiting_Confirmation` (у поставщика), `Confirmed`, `Shipped`, `Partially_Received`, `Received`, `Closed`, `Cancelled`.
+    *   **Payment Status (Enum):** `Payment_Not_Required`, `Awaiting_Allocation` (ждет HeadAccountant), `Awaiting_Payment` (ушли таски бухгалтерам), `Partially_Paid`, `Paid`.
+
+#### E. Finance
+*   **PaymentRequest:** Заявка на оплату, созданная HeadAccountant.
+    *   Fields: `order_id`, `fop_id`, `assigned_accountant_id`, `amount`, `status` (Pending, Paid), `proof_file` (URL/path).
+
+---
+
+### 3. Business Logic & Workflows
+
+#### Scenario 1: Order Creation & Confirmation
+1.  **Manager** создает `Order` (Status: `Draft`). Указывает `Receiver` и `Supplier`.
+2.  Manager отправляет заказ. Status -> `Awaiting_Confirmation`.
+3.  **External Bot** отправляет уведомление `SupplierManager`-у.
+4.  `SupplierManager` нажимает "Confirm" (и прикладывает файл счета) или "Reject/Edit".
+5.  Если подтверждено: Status -> `Confirmed`. Payment Status -> `Awaiting_Allocation`.
+
+#### Scenario 2: Financial Routing (HeadAccountant)
+1.  **HeadAccountant** видит список заказов в статусе `Awaiting_Allocation`.
+2.  Открывает заказ. Система подтягивает список **Valid FOPs** (на основе связей из п. 2C) и показывает их текущие балансы.
+3.  HeadAccountant разбивает сумму заказа. Пример: Заказ на 100к.
+    *   FOP A (Accountant 1): 60k.
+    *   FOP B (Accountant 2): 40k.
+4.  Нажимает "Process". Система создает два объекта `PaymentRequest`.
+5.  Order Payment Status -> `Awaiting_Payment`.
+
+#### Scenario 3: Execution (Accountant)
+1.  **Internal Bot** рассылает уведомления конкретным `Accountant`.
+2.  Accountant 1 получает: "Оплатить 60к поставщику X с ФОП A".
+3.  Accountant оплачивает, нажимает "Paid" и загружает скриншот.
+4.  Система обновляет статус `PaymentRequest`.
+5.  Когда все Requests по заказу оплачены -> Order Payment Status -> `Paid`.
+6.  Manager получает уведомление.
+
+---
+
+### 4. Telegram Bots Architecture
+**Requirement:** Implement TWO separate bot instances.
+1.  **External Bot:** Для `SupplierManager`. Только согласование заказов.
+2.  **Internal Bot:** Для сотрудников (`Manager`, `Accountant`). Уведомления о статусах, интерфейс оплаты для бухгалтеров.
+
+---
+
+### 5. Implementation Steps (Agent Instructions)
+
+**Step 1: Project Setup**
+*   Initialize project structure (FastAPI/Django).
+*   Setup Docker & docker-compose (App, DB, Redis for bots).
+
+**Step 2: Database Models**
+*   Write the SQLAlchemy/ORM models based on Section 2.
+*   Ensure proper Foreign Keys and Indexes.
+
+**Step 3: Core Logic (Services)**
+*   Implement `PaymentRoutingService`: Method `get_available_fops(supplier_id, receiver_id)` returning FOPs with balances.
+*   Implement `OrderStateService`: Handle status transitions.
+
+**Step 4: API Endpoints**
+*   CRUD for Orders.
+*   Endpoint for HeadAccountant to create `PaymentRequests` (split logic).
+
+**Step 5: Telegram Bots**
+*   Setup `aiogram` structure.
+*   Implement handlers for Supplier confirmation.
+*   Implement handlers for Accountant payment confirmation (photo upload).
+
+**Deliverables:**
+Please start by generating the **Database Models code (Python)** and the **Pydantic schemas (or Serializers)** to confirm the data structure before moving to logic implementation.
