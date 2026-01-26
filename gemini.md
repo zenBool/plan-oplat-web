@@ -200,7 +200,7 @@ Balance (Баланс): Вести учет нужно. У каждого ФОП
 
 **Role:** Senior Backend Architect & Lead Developer.
 **Objective:** Design and implement a Buyer-side Order Management System (OMS) with complex financial routing and Telegram integration.
-**Tech Stack:** Python (FastAPI or Django), PostgreSQL, SQLAlchemy (or Django ORM), Docker, Telegram Bot API (aiogram).
+**Tech Stack:** Python, FastAPI, PostgreSQL, SQLAlchemy, Docker, Telegram Bot API (aiogram).
 
 ---
 

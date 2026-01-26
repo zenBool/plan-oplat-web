@@ -1,5 +1,16 @@
-# FastAPI Example App
+# Payment Plan Web Application
 
+### Start Application
+
+1. Run the docker-compose.yml
+```shell
+docker compose up -d
+```
+2. Run the app
+```shell
+cd src/ && uv run run_main.py
+```
+or 
 ```shell
 gunicorn main:main_app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
 ```
